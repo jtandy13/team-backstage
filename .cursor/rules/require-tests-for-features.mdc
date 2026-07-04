@@ -1,0 +1,57 @@
+---
+description: Require tests for every new feature; delegate to the test-writer subagent
+alwaysApply: true
+---
+
+# Tests Required for New Features
+
+When creating or extending a **new feature** — frontend plugin, backend plugin/module, or utility API — tests **must** be created in the same work. Do not mark feature work complete without tests.
+
+## Policy
+
+- Every new feature ships with colocated tests (`*.test.ts` / `*.test.tsx`).
+- The implementing agent writes the feature code; **test writing is delegated** to the test-writer subagent.
+- Do not skip tests, defer them to a follow-up, or invent ad-hoc testing patterns inline.
+
+## Delegation workflow
+
+After implementing (or alongside finishing) the feature:
+
+1. **Launch the test-writer subagent** via the Task tool with `subagent_type="test-writer"`.
+2. In the task prompt, include:
+   - Package path and `backstage.role` (if known)
+   - Files/components/routes/APIs added or changed
+   - What behavior must be covered (happy path, errors, permissions, etc.)
+3. Let the subagent read `.cursor/agents/test-writer.md` and the applicable project skills:
+   - Backend → `.cursor/skills/backend-plugin-testing/SKILL.md`
+   - Frontend → `.cursor/skills/frontend-plugin-testing/SKILL.md`
+   - Utility APIs → `.cursor/skills/utility-api-testing/SKILL.md`
+4. Confirm the subagent ran `yarn test` in the target package and tests pass before finishing.
+
+## What counts as a new feature
+
+| Area | Examples |
+| --- | --- |
+| Backend | New plugin, module, HTTP route, service factory, database access |
+| Frontend | New plugin, extension, React component, entity card/content, route |
+| Utility API | New or changed utility API, `/testUtils` mock exports |
+
+Bug fixes and trivial refactors do not automatically require new tests unless behavior changed or coverage is missing for the fix.
+
+## Examples
+
+```text
+# ❌ BAD — feature shipped without tests
+"Added the catalog filter API route. Done."
+
+# ✅ GOOD — feature + delegated tests
+"Implemented the catalog filter route. Launching test-writer to add route and error-case tests."
+```
+
+```text
+# ❌ BAD — parent agent writes tests ad hoc
+"Wrote a custom mock provider and *.test.ts without reading project skills."
+
+# ✅ GOOD — test-writer follows project skills
+"Delegated to test-writer subagent; it used startTestBackend per backend-plugin-testing skill."
+```
