@@ -1,0 +1,54 @@
+---
+description: Require README.md for plugins and utility APIs; delegate to component-documenter
+alwaysApply: true
+---
+
+# README Required for Components
+
+When creating or **significantly modifying** a frontend plugin, backend plugin/module, or utility API, a `README.md` **must** exist at the root of that component's directory. Do not mark the work complete without it.
+
+## Policy
+
+- Every component ships with a structured `README.md` at `<component-directory>/README.md`.
+- The implementing agent writes the feature code; **documentation is delegated** to the component-documenter subagent.
+- Do not skip documentation, defer it to a follow-up, or write ad-hoc README content inline.
+
+## Delegation workflow
+
+After implementing (or alongside finishing) the component:
+
+1. **Launch the component-documenter subagent** via the Task tool with `subagent_type="component-documenter"`.
+2. In the task prompt, include:
+   - Component directory path and `backstage.role` (if known)
+   - Public surface added or changed (exports, extensions, routes, API refs, props, config)
+   - Whether this is a new component or a significant modification
+3. Let the subagent read `.cursor/agents/component-documenter.md` and follow its required README structure.
+4. Confirm `README.md` was created or updated at the component root before finishing.
+
+## What counts
+
+| Area | Examples |
+| --- | --- |
+| Backend | New plugin, module, HTTP route, service factory |
+| Frontend | New plugin, extension, entity card/content, route |
+| Utility API | New or changed utility API, `ApiRef`, factory exports |
+
+**Significant modification** means the public interface contract changed (new/changed inputs, outputs, side effects, or dependencies). Trivial refactors and bug fixes with no contract change do not require README updates unless documentation is missing or stale.
+
+## Examples
+
+```text
+# ❌ BAD — component shipped without README
+"Added the deployment-info-card plugin. Done."
+
+# ✅ GOOD — component + delegated documentation
+"Implemented deployment-info-card. Launching component-documenter to write README.md."
+```
+
+```text
+# ❌ BAD — parent agent writes README ad hoc
+"Wrote a generic CLI boilerplate README without reading component-documenter."
+
+# ✅ GOOD — component-documenter follows project template
+"Delegated to component-documenter; README documents Interface Contract from source."
+```
