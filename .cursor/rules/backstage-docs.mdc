@@ -1,0 +1,39 @@
+---
+description: Look up official Backstage docs when implementing uncovered features
+alwaysApply: true
+---
+
+# Backstage Feature Implementation
+
+When the user asks about building a new Backstage feature (plugins, catalog, scaffolder, TechDocs, auth, backend modules, frontend extensions, etc.):
+
+1. **Check existing context first** — use project skills, rules, and codebase conventions before reaching for external docs.
+2. **If the feature is not covered** — consult the official Backstage documentation before proposing or writing code.
+
+## Official documentation
+
+- Entry point: https://backstage.io/docs/overview/what-is-backstage
+- Docs root: https://backstage.io/docs/
+
+Use web search or fetch docs pages to find the exact guide for the feature (e.g. `https://backstage.io/docs/plugins/...`, `https://backstage.io/docs/features/...`).
+
+## Never use Legacy documentation
+
+Do **not** implement features using docs marked **Legacy** or pages under legacy paths (e.g. `https://backstage.io/docs/plugins--legacy-/...`).
+
+- If a doc page, section title, or sidebar label says "Legacy", skip it and find the current equivalent.
+- Example: use the current frontend/plugin docs, not [Plugins (Legacy)](https://backstage.io/docs/plugins--legacy-/generated-index) or the old frontend system.
+- When both legacy and current docs exist for the same topic, follow only the non-legacy guide.
+
+## Required workflow
+
+1. Identify the Backstage capability being requested (plugin, catalog entity, template action, API route, etc.).
+2. Find the matching **current** (non-legacy) official doc page and read the recommended approach, APIs, and file layout.
+3. Follow Backstage conventions from those docs — do not guess at plugin structure, config keys, or integration patterns.
+4. Prefer current docs over memory when Backstage APIs or setup steps may have changed.
+5. Cite the relevant doc URL when explaining the implementation approach.
+
+## When to skip doc lookup
+
+- The answer is already defined in this repo's code, config, or an applicable skill/rule.
+- The user is only asking about local/custom code with no Backstage framework gap.
