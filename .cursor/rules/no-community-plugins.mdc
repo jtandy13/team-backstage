@@ -1,0 +1,41 @@
+---
+description: Build new features in-house; never use Backstage community plugins
+alwaysApply: true
+---
+
+# No Community Plugins
+
+When the user asks for a new feature to be created, **never** use Backstage community plugins.
+
+## Policy
+
+- Implement new features in this project, regardless of whether an equivalent community plugin exists.
+- Do **not** suggest, install, or integrate external community plugins.
+- Do **not** defer to `@backstage-community/*` packages or plugins from the [Backstage community-plugins](https://github.com/backstage/community-plugins) repository.
+
+## What to use instead
+
+- Build custom plugins, modules, and integrations in this repo using official Backstage APIs and core packages (`@backstage/*`).
+- Follow the [Backstage Feature Implementation](./backstage-docs.mdc) rule for official docs and conventions.
+
+## Examples
+
+```text
+# ❌ BAD — user asks for a cost insights page
+"Let's install @backstage-community/plugin-cost-insights"
+
+# ✅ GOOD
+"Let's create a custom cost-insights plugin in packages/ using Backstage's plugin APIs"
+```
+
+```text
+# ❌ BAD — community plugin exists for the requested capability
+"The GitHub Actions plugin already exists in the community catalog, so we'll add that dependency."
+
+# ✅ GOOD
+"We'll implement this as a first-party plugin in the monorepo, following Backstage plugin structure."
+```
+
+## Scope
+
+This applies to **new feature work**. Do not introduce community plugins even if they would save time or match the request closely.
