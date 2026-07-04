@@ -19,7 +19,7 @@ Use `@backstage/frontend-test-utils` — not legacy `@backstage/test-utils` patt
    - `@testing-library/react`
    - `@testing-library/user-event` (interaction tests)
 3. Colocate tests as `*.test.tsx` next to the source file.
-4. Run tests with `yarn test` in the package directory, or `yarn test --watch path/to/file.test.tsx`.
+4. Run tests with `CI=true yarn test` in the package directory (see [yarn-test-ci](../yarn-test-ci/SKILL.md)). For a single file: `CI=true yarn test path/to/file.test.tsx`.
 
 ## Choose the right harness
 
@@ -210,7 +210,7 @@ Prefer `apis` on `renderInTestApp` / `createExtensionTester` / `renderTestApp` w
 - [ ] `useRouteRef` usage covered with `mountedRoutes`
 - [ ] Assertions use `@testing-library/react` queries (`findBy*`, `getBy*`)
 - [ ] Tests assert user-visible behavior, not implementation details
-- [ ] `yarn test` passes in the target package
+- [ ] `CI=true yarn test` passes in the target package
 
 ## Additional resources
 

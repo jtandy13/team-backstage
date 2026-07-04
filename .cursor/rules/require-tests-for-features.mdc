@@ -26,7 +26,8 @@ After implementing (or alongside finishing) the feature:
    - Backend → `.cursor/skills/backend-plugin-testing/SKILL.md`
    - Frontend → `.cursor/skills/frontend-plugin-testing/SKILL.md`
    - Utility APIs → `.cursor/skills/utility-api-testing/SKILL.md`
-4. Confirm the subagent ran `yarn test` in the target package and tests pass before finishing.
+   - Running tests → `.cursor/skills/yarn-test-ci/SKILL.md`
+4. Confirm the subagent ran `CI=true yarn test` in the target package and tests pass before finishing.
 
 ## What counts as a new feature
 

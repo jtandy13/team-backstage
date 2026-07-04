@@ -19,7 +19,7 @@ For full component and extension test harnesses, see [frontend-plugin-testing](.
    - `@testing-library/react`
 3. Colocate consumer tests as `*.test.tsx` next to the source file.
 4. Export plugin mocks from a `/testUtils` entry point (see below).
-5. Run tests with `yarn test` in the package directory, or `yarn test --watch path/to/file.test.tsx`.
+5. Run tests with `CI=true yarn test` in the package directory (see [yarn-test-ci](../yarn-test-ci/SKILL.md)). For a single file: `CI=true yarn test path/to/file.test.tsx`.
 
 ## Choose fake vs jest mock
 
@@ -222,7 +222,7 @@ Each supports `.mock()` for jest.fn-based assertions.
 - [ ] APIs provided via `apis` option on test harness (not manual `ApiProvider` wiring)
 - [ ] Plugin mocks use `attachMockApiFactory` + `createApiMock` and export from `/testUtils`
 - [ ] `TestApiProvider` used only for standalone renders outside test app harnesses
-- [ ] `yarn test` passes in the target package
+- [ ] `CI=true yarn test` passes in the target package
 
 ## Additional resources
 

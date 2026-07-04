@@ -17,7 +17,7 @@ Use `@backstage/backend-test-utils` — not legacy backend testing patterns.
    - `supertest` and `@types/supertest` (HTTP route tests)
    - `msw` (remote HTTP interaction tests)
 3. Colocate tests as `*.test.ts` next to the source file.
-4. Run tests with `yarn test` in the package directory, or `yarn test --watch path/to/file.test.ts`.
+4. Run tests with `CI=true yarn test` in the package directory (see [yarn-test-ci](../yarn-test-ci/SKILL.md)). For a single file: `CI=true yarn test path/to/file.test.ts`.
 
 ## Choose the right harness
 
@@ -187,7 +187,7 @@ describe('myServiceFactory', () => {
 - [ ] Remote HTTP stubbed with `msw` + `registerMswTestHooks`
 - [ ] Database tests use a single `TestDatabases.create()` per file
 - [ ] Tests assert behavior, not implementation details unrelated to the feature
-- [ ] `yarn test` passes in the target package
+- [ ] `CI=true yarn test` passes in the target package
 
 ## Additional resources
 
