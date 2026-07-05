@@ -82,8 +82,9 @@ jobs:
 
   # -----------------------------------------------------------------
   # 2. CURSOR CODE REVIEW (pull requests to main only)
-  # Runs in parallel with CI. Posts/updates a single PR comment and
-  # fails when the agent reports critical blocking issues.
+  # Runs on PR open (draft or ready) and when new commits are pushed.
+  # Posts/updates a single PR comment and fails when the agent reports
+  # critical blocking issues.
   # -----------------------------------------------------------------
   code-review:
     name: Cursor Code Review
@@ -91,7 +92,7 @@ jobs:
     timeout-minutes: 15
     if: >
       github.event_name == 'pull_request' &&
-      github.event.pull_request.draft == false &&
+      (github.event.action == 'opened' || github.event.action == 'synchronize') &&
       github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
