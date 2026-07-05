@@ -7,7 +7,6 @@ import { SignInPageBlueprint } from '@backstage/plugin-app-react';
 import { SignInPage } from '@backstage/core-components';
 import { createFrontendModule } from '@backstage/frontend-plugin-api';
 
-
 const signInPage = SignInPageBlueprint.make({
   params: {
     loader: async () => props =>
