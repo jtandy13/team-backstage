@@ -63,6 +63,10 @@ jobs:
         env:
           CI: true
 
+      # Generate TypeScript declarations required by backstage-cli package builds.
+      - name: Generate TypeScript Declarations
+        run: yarn tsc
+
       # Build the frontend app, backend, and plugins via the Backstage CLI.
       - name: Build Application
         run: yarn build:all
