@@ -34,6 +34,8 @@ Provide feedback on:
 - Security considerations
 - Best practices compliance
 
+Do not modify any files. Review only.
+
 Format your response as GitHub-flavored Markdown suitable for a PR comment.
 Be specific: cite file paths and line areas where possible.
 
@@ -47,7 +49,7 @@ EOF
 )"
 
 set +e
-timeout "${AGENT_TIMEOUT}" agent -p --output-format json "${PROMPT}" > "${AGENT_OUTPUT_FILE}"
+timeout "${AGENT_TIMEOUT}" agent -p --trust --output-format json "${PROMPT}" > "${AGENT_OUTPUT_FILE}"
 AGENT_EXIT=$?
 set -e
 
