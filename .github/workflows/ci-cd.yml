@@ -44,7 +44,7 @@ jobs:
         run: yarn install --immutable
 
       # Run ESLint across every package in the monorepo.
-      # Uses lint:all (not lint) because lint only checks packages changed since origin/master.
+      # Uses lint:all (not lint) because lint only checks packages changed since origin/main.
       - name: Run Linter
         run: yarn lint:all
 
