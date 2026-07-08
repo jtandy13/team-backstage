@@ -10,14 +10,25 @@
     "./alpha": "./src/alpha.ts",
     "./package.json": "./package.json"
   },
+  "typesVersions": {
+    "*": {
+      "alpha": [
+        "src/alpha.ts"
+      ],
+      "package.json": [
+        "package.json"
+      ]
+    }
+  },
   "publishConfig": {
-    "access": "public",
-    "main": "dist/index.esm.js",
-    "types": "dist/index.d.ts"
+    "access": "public"
   },
   "backstage": {
     "role": "frontend-plugin",
-    "pluginId": "deployment-info"
+    "pluginId": "deployment-info",
+    "features": {
+      "./alpha": "@backstage/FrontendPlugin"
+    }
   },
   "sideEffects": false,
   "scripts": {
