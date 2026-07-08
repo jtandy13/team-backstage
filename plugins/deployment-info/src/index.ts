@@ -1,4 +1,4 @@
-export { deploymentInfoPlugin as default } from './plugin';
+export { deploymentInfoPlugin } from './plugin';
 export { deploymentInfoEntityCard } from './extensions/entityCard';
 export { DeploymentInfoCard } from './components/DeploymentInfoCard';
 export {

@@ -19,29 +19,33 @@
 
 ### Return / Output
 
-- **`deploymentInfoPlugin`** (default export) — a `FrontendPlugin` (via `createFrontendPlugin`) with `pluginId: 'deployment-info'`, registering the `deploymentInfoEntityCard` extension.
-- **`deploymentInfoCatalogModule`** (`./alpha` export, `createFrontendModule`) — a frontend module targeting `pluginId: 'catalog'` that attaches `deploymentInfoEntityCard` to the catalog plugin's entity page.
-- **`deploymentInfoEntityCard`** — an `EntityCardBlueprint` extension (`type: 'content'`) that lazily loads and renders `DeploymentInfoCard` on entities matching the `isServiceComponent` filter (Component + `spec.type === 'service'`).
-- **`DeploymentInfoCard`** — a React component rendering:
-  - A warning panel if the environment annotation is missing.
-  - A loading spinner (`InfoCard` + `Progress`) while fetching.
-  - An error panel if the fetch fails or returns no data.
-  - On success, an `InfoCard` titled "Deployment Info" with a "Connected to Kubernetes" chip (shown only when `deployed_on === 'kubernetes'`) and a `StructuredMetadataTable` showing `Live Pod Hostname` and `Deployment Time`.
-- **`buildDeploymentInfoUrl(entityName, environment)`** — returns `string`, e.g. `http://my-service-prod.local/api/v1/info`.
-- **`fetchDeploymentInfo(url)`** — returns `Promise<DeploymentInfo>`:
+- **`./alpha` entry point (`@backstage/FrontendPlugin`)** — default-exports **`deploymentInfoPlugin`**, a `FrontendPlugin` created via `createFrontendPlugin` with `pluginId: 'deployment-info'` and `extensions: [deploymentInfoEntityCard]`. This is the canonical entry point for installation via feature discovery.
+- **`.` entry point** — has **no default export**. It only re-exports named symbols for direct consumption:
 
-```ts
-interface DeploymentInfo {
-  hostname: string;
-  time: string;
-  deployed_on?: string;
-  app_name?: string;
-  env?: string;
-  message?: string;
-}
-```
+  - **`deploymentInfoPlugin`** — same `FrontendPlugin` instance as above.
+  - **`deploymentInfoEntityCard`** — an `EntityCardBlueprint` extension (`type: 'content'`) that lazily loads and renders `DeploymentInfoCard` on entities matching the `isServiceComponent` filter (Component + `spec.type === 'service'`).
+  - **`DeploymentInfoCard`** — a React component rendering:
+    - A warning panel if the environment annotation is missing.
+    - A loading spinner (`InfoCard` + `Progress`) while fetching.
+    - An error panel if the fetch fails or returns no data.
+    - On success, an `InfoCard` titled "Deployment Info" with a "Connected to Kubernetes" chip (shown only when `deployed_on === 'kubernetes'`) and a `StructuredMetadataTable` showing `Live Pod Hostname` and `Deployment Time`.
+  - **`buildDeploymentInfoUrl(entityName, environment)`** — returns `string`, e.g. `http://my-service-prod.local/api/v1/info`.
+  - **`fetchDeploymentInfo(url)`** — returns `Promise<DeploymentInfo>`:
 
-- **`DEPLOYMENT_ENVIRONMENT_ANNOTATION`** — `string` constant, value `'deployment.backstage.io/environment'`.
+    ```ts
+    interface DeploymentInfo {
+      hostname: string;
+      time: string;
+      deployed_on?: string;
+      app_name?: string;
+      env?: string;
+      message?: string;
+    }
+    ```
+
+  - **`DEPLOYMENT_ENVIRONMENT_ANNOTATION`** — `string` constant, value `'deployment.backstage.io/environment'`.
+
+There is no `createFrontendModule({ pluginId: 'catalog' })` module in this package — the entity card is registered directly on the plugin's own `extensions` array (per the `EntityCardBlueprint` filter, not a catalog-page module attachment).
 
 ### Side Effects
 
@@ -50,15 +54,47 @@ interface DeploymentInfo {
 
 ## Usage Example
 
-Register the catalog entity card module in the app (as done in `packages/app/src/App.tsx`):
+The plugin follows the canonical `/alpha` frontend-plugin pattern. `package.json` marks `./alpha` as a `@backstage/FrontendPlugin` in both `exports` and `backstage.features`:
+
+```json
+{
+  "exports": {
+    ".": "./src/index.ts",
+    "./alpha": {
+      "backstage": "@backstage/FrontendPlugin",
+      "import": "./src/alpha.ts",
+      "types": "./src/alpha.ts",
+      "default": "./src/alpha.ts"
+    }
+  },
+  "backstage": {
+    "role": "frontend-plugin",
+    "pluginId": "deployment-info",
+    "features": {
+      "./alpha": "@backstage/FrontendPlugin"
+    }
+  }
+}
+```
+
+Because of this, the host app does **not** need to import or register the plugin manually in `packages/app/src/App.tsx`. As long as the app has feature discovery enabled in `app-config.yaml`:
+
+```yaml
+app:
+  packages: all
+```
+
+...and the package is listed as a dependency of `packages/app` (`@internal/backstage-plugin-deployment-info: workspace:^`), Backstage automatically discovers and installs `deploymentInfoPlugin` from the `./alpha` entry point.
+
+For local plugin development, `dev/index.tsx` imports the plugin directly from `../src/alpha`:
 
 ```tsx
-import { createApp } from '@backstage/frontend-defaults';
+import { createDevApp } from '@backstage/frontend-dev-utils';
 import catalogPlugin from '@backstage/plugin-catalog/alpha';
-import deploymentInfoCatalogModule from '@internal/backstage-plugin-deployment-info/alpha';
+import deploymentInfoPlugin from '../src/alpha';
 
-export default createApp({
-  features: [catalogPlugin, deploymentInfoCatalogModule],
+createDevApp({
+  features: [catalogPlugin, deploymentInfoPlugin],
 });
 ```
 
@@ -77,7 +113,7 @@ spec:
   owner: team-a
 ```
 
-Calling the API helpers directly, e.g. in a custom component:
+Calling the API helpers directly, e.g. in a custom component, uses the `.` entry point's named exports (no default export is available from `.`):
 
 ```ts
 import {
@@ -94,11 +130,11 @@ const info = await fetchDeploymentInfo(url);
 
 ## Dependencies
 
-- `@backstage/frontend-plugin-api` — `createFrontendPlugin`, `createFrontendModule`.
+- `@backstage/frontend-plugin-api` — `createFrontendPlugin`.
 - `@backstage/plugin-catalog-react` — `useEntity`, `EntityCardBlueprint` (via `/alpha`).
 - `@backstage/catalog-model` — `Entity` type used for the entity card filter.
 - `@backstage/core-components` — `InfoCard`, `Progress`, `StructuredMetadataTable`, `WarningPanel`.
 - `@backstage/theme`, `@backstage/ui` — plugin theming/UI primitives.
 - `@material-ui/core` — `Chip`, `Grid` used in the card layout.
 - `react-use` (`useAsync`) — async data fetching in `DeploymentInfoCard`.
-- Host app must register the `./alpha` module against the `catalog` plugin (e.g. `@backstage/plugin-catalog/alpha`) for the entity card to attach to the catalog overview page.
+- Host app must have `app.packages: all` (or otherwise discover this package) in `app-config.yaml`, and depend on `@internal/backstage-plugin-deployment-info`, for the `./alpha` `FrontendPlugin` to be installed automatically.

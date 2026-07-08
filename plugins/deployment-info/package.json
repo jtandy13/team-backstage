@@ -7,7 +7,12 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./alpha": "./src/alpha.ts",
+    "./alpha": {
+      "backstage": "@backstage/FrontendPlugin",
+      "import": "./src/alpha.ts",
+      "types": "./src/alpha.ts",
+      "default": "./src/alpha.ts"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -17,7 +22,10 @@
   },
   "backstage": {
     "role": "frontend-plugin",
-    "pluginId": "deployment-info"
+    "pluginId": "deployment-info",
+    "features": {
+      "./alpha": "@backstage/FrontendPlugin"
+    }
   },
   "sideEffects": false,
   "scripts": {
