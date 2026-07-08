@@ -29,8 +29,9 @@ backend:
       #     $file: <file-path>/ca/server.crt
 
 auth:
+  environment: production
   providers:
-    guest: {}
+    guest: null
 
 catalog:
   # Overrides the default list locations from app-config.yaml as these contain example data.
