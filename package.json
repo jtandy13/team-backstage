@@ -6,7 +6,11 @@
     "node": "22 || 24"
   },
   "scripts": {
-    "start": "backstage-cli repo start",
+    "prestart": "test -f .env || cp .env.example .env",
+    "start": "docker compose -f docker-compose.local.yaml up -d --wait && dotenv -e .env -- backstage-cli repo start",
+    "start:app": "dotenv -e .env -- backstage-cli repo start",
+    "stop:local": "docker compose -f docker-compose.local.yaml down",
+    "db:status": "docker compose -f docker-compose.local.yaml ps && docker compose -f docker-compose.local.yaml exec postgres psql -U postgres -c \"SELECT datname FROM pg_database WHERE datname LIKE 'backstage_plugin_%' ORDER BY datname;\" && docker compose -f docker-compose.local.yaml exec postgres psql -U postgres -c \"SELECT datname, count(*) AS connections FROM pg_stat_activity WHERE datname LIKE 'backstage_plugin_%' GROUP BY datname ORDER BY datname;\" && docker compose -f docker-compose.local.yaml exec postgres psql -U postgres -d backstage_plugin_catalog -c \"SELECT name FROM knex_migrations ORDER BY id DESC LIMIT 5;\"",
     "build:backend": "yarn workspace backend build",
     "build:all": "backstage-cli repo build --all",
     "build-image": "yarn workspace backend build-image",
@@ -43,6 +47,7 @@
     "@jest/environment-jsdom-abstract": "~30.2.0",
     "@playwright/test": "^1.32.3",
     "@types/jest": "^30.0.0",
+    "dotenv-cli": "^8.0.0",
     "husky": "^9.1.7",
     "jest": "~30.2.0",
     "jsdom": "^27.1.0",
