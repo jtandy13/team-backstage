@@ -49,7 +49,13 @@ export default defineConfig({
 
   retries: process.env.CI ? 2 : 0,
 
-  reporter: [['html', { open: 'never', outputFolder: 'e2e-test-report' }]],
+  reporter: process.env.CI
+    ? [
+        ['html', { open: 'never', outputFolder: 'e2e-test-report' }],
+        ['json', { outputFile: 'playwright-results.json' }],
+        ['github'],
+      ]
+    : [['html', { open: 'never', outputFolder: 'e2e-test-report' }]],
 
   use: {
     actionTimeout: 0,
