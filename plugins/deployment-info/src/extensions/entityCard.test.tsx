@@ -12,18 +12,9 @@ function renderEntityPage(entity: Entity) {
 }
 
 describe('deploymentInfoEntityCard filter', () => {
-  const originalFetch = global.fetch;
-
-  beforeEach(() => {
-    global.fetch = jest.fn(
-      () => new Promise<Response>(() => {}),
-    ) as unknown as typeof fetch;
-  });
-
-  afterEach(() => {
-    global.fetch = originalFetch;
-    jest.restoreAllMocks();
-  });
+  // Mock mode is on by default (see `deploymentInfoSettings.useMock` in
+  // `../api`), so the card resolves immediately with mock data and `fetch`
+  // is never called. These tests only care whether the card mounts.
 
   it('renders the card for a Component entity with spec.type "service"', async () => {
     const entity: Entity = {
