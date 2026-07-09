@@ -1,7 +1,7 @@
 # Backstage demo project — Continuous Integration and Deployment pipeline.
 #
 # Push (any branch)  → CI job only, except pushes to main which also run CD.
-# Pull request       → CI job only (no deploy).
+# Pull request       → CI job (including Playwright e2e + PR report comment).
 # Manual (Actions UI)→ CI job only via workflow_dispatch (no deploy).
 
 name: CI/CD Pipeline
@@ -24,6 +24,23 @@ jobs:
   ci:
     name: Continuous Integration
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       # Fetch the repository source so later steps can read files and git history.
@@ -83,6 +100,51 @@ jobs:
             packages/backend/dist/
             plugins/**/dist/
           retention-days: 1
+
+      # -----------------------------------------------------------------
+      # E2E tests (pull requests to main only)
+      # Runs Playwright against the built backend and posts the HTML report
+      # summary to the pull request as a comment.
+      # -----------------------------------------------------------------
+      - name: Install Playwright Browsers
+        if: github.event_name == 'pull_request'
+        run: yarn playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        if: github.event_name == 'pull_request'
+        run: bash .github/scripts/run-e2e.sh
+        env:
+          CI: true
+          BACKSTAGE_TEST_DISABLE_DOCKER: 1
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          GITHUB_TOKEN: e2e-ci-token
+
+      - name: Upload Playwright HTML Report
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-html-report
+          path: |
+            e2e-test-report/
+            playwright-results.json
+          retention-days: 14
+
+      - name: Post Playwright Report to PR
+        if: always() && github.event_name == 'pull_request' && hashFiles('playwright-results.json') != ''
+        uses: daun/playwright-report-summary@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          report-file: playwright-results.json
+          report-tag: ci-e2e-${{ github.run_id }}
+          comment-title: Playwright E2E test results
+          test-command: yarn test:e2e
+          footer: |
+            ### HTML report
+
+            Download the full interactive Playwright HTML report from the [**playwright-html-report** workflow artifact](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
 
   # -----------------------------------------------------------------
   # 2. CURSOR CODE REVIEW (pull requests to main only)
@@ -157,14 +219,52 @@ jobs:
     needs: ci
     # Gate: deploy only when code is pushed directly to main.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
+      # Retrieve the repository source and dependencies for post-deploy e2e tests.
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+
+      - name: Install Dependencies
+        run: yarn install --immutable
+
       # Retrieve the build output produced by the CI job.
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-assets
           path: build-assets/
+
+      - name: Restore Build Output
+        run: |
+          cp -r build-assets/packages/app/dist packages/app/dist
+          cp -r build-assets/packages/backend/dist packages/backend/dist
+          find build-assets/plugins -type d -name dist | while read -r dist_dir; do
+            plugin_dir="${dist_dir#build-assets/}"
+            plugin_root="$(dirname "$plugin_dir")"
+            mkdir -p "$plugin_root"
+            cp -r "$dist_dir" "$plugin_dir"
+          done
 
       # Placeholder for future secret injection and provider authentication
       # (e.g. kubectl, AWS CLI, Docker registry login).
@@ -193,3 +293,31 @@ jobs:
         run: |
           echo "Running post-deployment sanity checks..."
           echo "Status: Active (200 OK)"
+
+      # -----------------------------------------------------------------
+      # E2E tests (merge to main / CD flow)
+      # Post-deployment smoke tests using Playwright against the built app.
+      # -----------------------------------------------------------------
+      - name: Install Playwright Browsers
+        run: yarn playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        run: bash .github/scripts/run-e2e.sh
+        env:
+          CI: true
+          BACKSTAGE_TEST_DISABLE_DOCKER: 1
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          GITHUB_TOKEN: e2e-ci-token
+
+      - name: Upload Playwright HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-html-report-cd
+          path: |
+            e2e-test-report/
+            playwright-results.json
+          retention-days: 14
