@@ -4,23 +4,27 @@
 
 This is a Backstage developer portal (Yarn 4 monorepo). Standard commands live in `README.md` and root `package.json` scripts; prefer those. The notes below are Cloud-VM-specific caveats.
 
-### Database: use native PostgreSQL, not Docker
+### Database: native PostgreSQL
 
-Docker is **not** available in the Cloud VM, so the documented `yarn start` (which runs `docker compose -f docker-compose.local.yaml up`) will fail on the compose step. Instead:
+Local development uses **native PostgreSQL**, not Docker.
 
-- A native **PostgreSQL 16** is installed. Start it (it is not auto-started on boot):
-  ```sh
-  sudo pg_ctlcluster 16 main start
-  ```
+- A native **PostgreSQL 16** is installed on the Cloud VM. It is not auto-started on boot.
 - It listens on `127.0.0.1:5432` with user/password `postgres`/`postgres`, matching `.env.example`.
 - Ensure `.env` exists (Yarn Berry does not reliably run the `prestart` hook): `cp .env.example .env` if missing.
 
 ### Running the app
 
-Run the app **without** the Docker step, since Postgres is already running natively:
+Prefer the full local stack (starts Postgres if needed, then frontend + backend):
 
 ```sh
-yarn start:app   # runs `dotenv -e .env -- backstage-cli repo start`
+yarn start:local
+```
+
+Or start Postgres yourself, then the app only:
+
+```sh
+sudo pg_ctlcluster 16 main start
+yarn start   # or yarn start:app — same command
 ```
 
 - Frontend: http://localhost:3000 — sign in with the **Guest** provider.

@@ -42,7 +42,6 @@ site
 
 # Local configuration files
 *.local.yaml
-!docker-compose.local.yaml
 
 # Sensitive credentials
 *-credentials.yaml

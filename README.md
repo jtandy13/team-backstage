@@ -12,7 +12,7 @@ An internal [Backstage](https://backstage.io) developer portal built as a Yarn w
 | **Language**        | TypeScript ~5.8                                                                            |
 | **Frontend**        | React 18, Material UI v4, Backstage new frontend system (`@backstage/frontend-plugin-api`) |
 | **Backend**         | Backstage backend system (`@backstage/backend-defaults`)                                   |
-| **Database**        | PostgreSQL 18 (local via Docker Compose)                                                   |
+| **Database**        | PostgreSQL 16+ (native local install)                                                      |
 | **Search**          | PostgreSQL-backed search engine                                                            |
 | **Auth**            | Guest provider (development), GitHub provider                                              |
 | **Testing**         | Jest, React Testing Library, Playwright (e2e)                                              |
@@ -59,7 +59,7 @@ An internal [Backstage](https://backstage.io) developer portal built as a Yarn w
 └────────────────────────────┬────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
-│  PostgreSQL  (docker-compose.local.yaml)                        │
+│  PostgreSQL  (native, 127.0.0.1:5432)                            │
 │  • Plugin databases (backstage_plugin_*)                        │
 │  • Search index                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -78,7 +78,6 @@ backstage/
 ├── examples/         # Sample entities, org data, and scaffolder templates
 ├── app-config.yaml   # Base configuration (development)
 ├── app-config.production.yaml
-├── docker-compose.local.yaml   # Local PostgreSQL
 └── .env.example      # Environment variable template
 ```
 
@@ -105,7 +104,8 @@ The backend uses Backstage's **new backend system**:
   ```sh
   corepack enable
   ```
-- **Docker** — required for local PostgreSQL and TechDocs generation
+- **PostgreSQL** 16+ — native install listening on `127.0.0.1:5432` with user/password matching `.env.example` (`postgres`/`postgres` by default)
+- **Docker** — optional; only required for TechDocs generation and `yarn build-image`
 
 ## Getting started
 
@@ -115,9 +115,29 @@ The backend uses Backstage's **new backend system**:
 yarn install
 ```
 
-### 2. Configure environment
+### 2. Start PostgreSQL
 
-Copy the example environment file (also done automatically by `yarn start`):
+PostgreSQL must be running before you start Backstage. You can either start it yourself, or use `yarn start:local` (step 4) which starts it for you.
+
+**macOS (Homebrew):**
+
+```sh
+brew install postgresql@16
+brew services start postgresql@16
+# Ensure a role/password matching .env.example (postgres/postgres), e.g.:
+# createuser -s postgres
+# psql -c "ALTER USER postgres PASSWORD 'postgres';"
+```
+
+**Linux / Cloud VM:**
+
+```sh
+sudo pg_ctlcluster 16 main start
+```
+
+### 3. Configure environment
+
+Copy the example environment file (also done automatically by `yarn start` / `yarn start:local`):
 
 ```sh
 cp .env.example .env
@@ -125,9 +145,15 @@ cp .env.example .env
 
 Edit `.env` if your PostgreSQL connection differs from the defaults.
 
-### 3. Start the full local environment
+### 4. Start Backstage
 
-This command starts PostgreSQL in Docker, waits for it to become healthy, then launches the Backstage frontend and backend:
+**Full local stack** (starts native PostgreSQL if needed, then frontend + backend):
+
+```sh
+yarn start:local
+```
+
+**App only** (assumes PostgreSQL is already running). If `pg_isready` is installed, fails fast when the database is unreachable:
 
 ```sh
 yarn start
@@ -138,27 +164,19 @@ yarn start
 | Frontend    | http://localhost:3000 |
 | Backend API | http://localhost:7007 |
 
-Sign in with the **Guest** provider in development (`auth.environment: development`).
-
-### 4. Stop local infrastructure
-
-```sh
-yarn stop:local
-```
-
-This stops the Docker Compose PostgreSQL container. The Backstage app process is stopped separately (Ctrl+C in the terminal running `yarn start`).
+Sign in with the **Guest** provider in development (`auth.environment: development`). Stop the app with Ctrl+C. Manage PostgreSQL with your OS tools (for example `brew services stop postgresql@16` or `sudo pg_ctlcluster 16 main stop`).
 
 ## Scripts
 
 ### Daily development
 
-| Script            | Description                                                                        |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| `yarn start`      | Start PostgreSQL (Docker) + Backstage frontend and backend                         |
-| `yarn start:app`  | Start Backstage only (assumes PostgreSQL is already running)                       |
-| `yarn stop:local` | Stop the local PostgreSQL Docker container                                         |
-| `yarn db:status`  | Inspect PostgreSQL container, plugin databases, connections, and recent migrations |
-| `yarn new`        | Scaffold a new plugin or package interactively                                     |
+| Script             | Description                                                               |
+| ------------------ | ------------------------------------------------------------------------- |
+| `yarn start:local` | Start native PostgreSQL (if needed), then Backstage frontend and backend  |
+| `yarn start`       | Start Backstage frontend and backend (PostgreSQL must already be running) |
+| `yarn start:app`   | Alias of `yarn start`                                                     |
+| `yarn db:status`   | Inspect plugin databases, connections, and recent catalog migrations      |
+| `yarn new`         | Scaffold a new plugin or package interactively                            |
 
 ### Build
 
