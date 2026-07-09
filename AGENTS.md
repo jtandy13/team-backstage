@@ -33,7 +33,7 @@ yarn start   # or yarn start:app — same command
 
 ### Known-expected behaviors (not bugs)
 
-- The custom **Deployment Info** card on `service` entities (e.g. `example-service`) shows "Could not load deployment info". This is expected: it fetches a fictional host `http://<name>-<env>.local/api/v1/info` that does not exist in any environment.
+- The custom **Deployment Info** card on `service` entities (e.g. `example-service`) currently uses static mock data (`deploymentInfoSettings.useMock` in `plugins/deployment-info/src/api.ts`). Set that flag to `false` to resume live fetches against `http://<name>-<env>.local/api/v1/info` (those hosts do not exist in local/Cloud environments).
 - **TechDocs generation** uses `techdocs.generator.runIn: local` (no Docker required for docs). `yarn build-image` still requires Docker and will not work in the Cloud VM.
 - The Kubernetes plugin logs a warning about missing config (no cluster configured); this is expected.
 

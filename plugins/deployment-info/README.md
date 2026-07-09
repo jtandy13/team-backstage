@@ -2,20 +2,21 @@
 
 **Type:** Frontend Plugin
 
-**Description:** Adds a "Deployment Info" card to the catalog overview page for Component entities of type `service`, showing live deployment details (pod hostname, deployment time, and Kubernetes connectivity) fetched directly from the running service.
+**Description:** Adds a "Deployment Info" card to the catalog overview page for Component entities of type `service`, showing deployment details (pod hostname, deployment time, and Kubernetes connectivity). By default the card serves static mock data; it can be switched to fetch live data directly from the running service.
 
 ## Interface Contract
 
 ### Parameters / Inputs
 
-| Name                                     | Type                         | Required     | Description                                                                                                                                      |
-| ---------------------------------------- | ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `deployment.backstage.io/environment`    | Entity annotation (`string`) | Y            | Deployment environment (e.g. `dev`, `prod`) used to build the info endpoint URL. If absent, the card renders a warning instead of fetching data. |
-| Entity `kind`                            | `string`                     | Y (implicit) | Card only renders for entities where `kind === 'Component'`.                                                                                     |
-| Entity `spec.type`                       | `string`                     | Y (implicit) | Card only renders for entities where `spec.type === 'service'`.                                                                                  |
-| `entityName` (`buildDeploymentInfoUrl`)  | `string`                     | Y            | The entity's `metadata.name`, used as part of the constructed URL host.                                                                          |
-| `environment` (`buildDeploymentInfoUrl`) | `string`                     | Y            | Value of the environment annotation, used as part of the constructed URL host.                                                                   |
-| `url` (`fetchDeploymentInfo`)            | `string`                     | Y            | Fully-built deployment info endpoint URL to fetch.                                                                                               |
+| Name                                     | Type                         | Required     | Description                                                                                                                                                                              |
+| ---------------------------------------- | ---------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deployment.backstage.io/environment`    | Entity annotation (`string`) | Y            | Deployment environment (e.g. `dev`, `prod`) used to build the info endpoint URL. If absent, the card renders a warning instead of fetching data.                                         |
+| Entity `kind`                            | `string`                     | Y (implicit) | Card only renders for entities where `kind === 'Component'`.                                                                                                                             |
+| Entity `spec.type`                       | `string`                     | Y (implicit) | Card only renders for entities where `spec.type === 'service'`.                                                                                                                          |
+| `entityName` (`buildDeploymentInfoUrl`)  | `string`                     | Y            | The entity's `metadata.name`, used as part of the constructed URL host.                                                                                                                  |
+| `environment` (`buildDeploymentInfoUrl`) | `string`                     | Y            | Value of the environment annotation, used as part of the constructed URL host.                                                                                                           |
+| `url` (`fetchDeploymentInfo`)            | `string`                     | Y            | Fully-built deployment info endpoint URL to fetch. Ignored when `deploymentInfoSettings.useMock` is `true`.                                                                              |
+| `deploymentInfoSettings.useMock`         | `boolean`                    | N            | Module-level flag (default `true`) read by `fetchDeploymentInfo`. When `true`, returns `MOCK_DEPLOYMENT_INFO` instead of calling `url`. Set to `false` in source to resume live fetches. |
 
 ### Return / Output
 
@@ -30,7 +31,7 @@
     - An error panel if the fetch fails or returns no data.
     - On success, an `InfoCard` titled "Deployment Info" with a "Connected to Kubernetes" chip (shown only when `deployed_on === 'kubernetes'`) and a `StructuredMetadataTable` showing `Live Pod Hostname` and `Deployment Time`.
   - **`buildDeploymentInfoUrl(entityName, environment)`** — returns `string`, e.g. `http://my-service-prod.local/api/v1/info`.
-  - **`fetchDeploymentInfo(url)`** — returns `Promise<DeploymentInfo>`:
+  - **`fetchDeploymentInfo(url)`** — returns `Promise<DeploymentInfo>`. When `deploymentInfoSettings.useMock` is `true` (the current default), it returns `MOCK_DEPLOYMENT_INFO` immediately without inspecting `url`. When `false`, it performs a live `GET` against `url`:
 
     ```ts
     interface DeploymentInfo {
@@ -43,13 +44,25 @@
     }
     ```
 
+  - **`deploymentInfoSettings`** — `{ useMock: boolean }` mutable settings object exported from `./api`. Defaults to `{ useMock: true }`. This single flag controls whether `fetchDeploymentInfo` (and therefore `DeploymentInfoCard`) serves mock or live data.
+  - **`MOCK_DEPLOYMENT_INFO`** — a static `DeploymentInfo` constant exported from `./mockData`, used as the mock response:
+
+    ```ts
+    const MOCK_DEPLOYMENT_INFO: DeploymentInfo = {
+      hostname: 'svc-7bdfdc4cb4-tzj2v',
+      time: '2026-07-04 10:58:12',
+      deployed_on: 'kubernetes',
+    };
+    ```
+
   - **`DEPLOYMENT_ENVIRONMENT_ANNOTATION`** — `string` constant, value `'deployment.backstage.io/environment'`.
 
 There is no `createFrontendModule({ pluginId: 'catalog' })` module in this package — the entity card is registered directly on the plugin's own `extensions` array (per the `EntityCardBlueprint` filter, not a catalog-page module attachment).
 
 ### Side Effects
 
-- Issues an HTTP `GET` request to `http://{entity-name}-{environment}.local/api/v1/info` to retrieve live deployment information for the entity (`fetchDeploymentInfo`).
+- **Mock mode (`deploymentInfoSettings.useMock === true`, the current default)** — no network request is made. `fetchDeploymentInfo` synchronously resolves to `MOCK_DEPLOYMENT_INFO`.
+- **Live mode (`deploymentInfoSettings.useMock === false`)** — issues an HTTP `GET` request to `http://{entity-name}-{environment}.local/api/v1/info` to retrieve live deployment information for the entity (`fetchDeploymentInfo`).
 - Reads the current entity's annotations and spec via `useEntity` from `@backstage/plugin-catalog-react` (no writes to the catalog).
 
 ## Usage Example
@@ -125,7 +138,28 @@ const url = buildDeploymentInfoUrl('my-service', 'prod');
 // 'http://my-service-prod.local/api/v1/info'
 
 const info = await fetchDeploymentInfo(url);
-// { hostname: 'pod-abc123', time: '2026-07-07T10:00:00Z', deployed_on: 'kubernetes' }
+// Mock mode (default): resolves immediately to MOCK_DEPLOYMENT_INFO regardless of `url`.
+// { hostname: 'svc-7bdfdc4cb4-tzj2v', time: '2026-07-04 10:58:12', deployed_on: 'kubernetes' }
+```
+
+### Mock mode
+
+`deploymentInfoSettings.useMock` currently defaults to `true`, so `DeploymentInfoCard` and `fetchDeploymentInfo` always render `MOCK_DEPLOYMENT_INFO` without making a network call — this is the expected behavior in local/dev environments where the per-service `http://<name>-<env>.local/api/v1/info` hosts don't resolve.
+
+To resume live fetches against the real deployment info endpoint, set the flag to `false` in `src/api.ts`:
+
+```ts
+export const deploymentInfoSettings = {
+  useMock: false,
+};
+```
+
+Since `deploymentInfoSettings` is also exported from the package's `.` entry point, consumers can flip it at runtime instead of editing source, e.g. in a dev harness or test setup:
+
+```ts
+import { deploymentInfoSettings } from '@internal/backstage-plugin-deployment-info';
+
+deploymentInfoSettings.useMock = false; // subsequent fetchDeploymentInfo calls hit the live URL
 ```
 
 ## Dependencies

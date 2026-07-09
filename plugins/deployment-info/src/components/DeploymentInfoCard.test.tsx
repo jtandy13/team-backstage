@@ -4,6 +4,8 @@ import { createTestEntityPage } from '@backstage/plugin-catalog-react/testUtils'
 import { Entity } from '@backstage/catalog-model';
 import { deploymentInfoEntityCard } from '../extensions/entityCard';
 import { DEPLOYMENT_ENVIRONMENT_ANNOTATION } from '../constants';
+import { deploymentInfoSettings } from '../api';
+import { MOCK_DEPLOYMENT_INFO } from '../mockData';
 
 function createServiceEntity(annotations?: Record<string, string>): Entity {
   return {
@@ -28,9 +30,11 @@ function renderDeploymentInfoCard(entity: Entity) {
 
 describe('DeploymentInfoCard', () => {
   const originalFetch = global.fetch;
+  const originalUseMock = deploymentInfoSettings.useMock;
 
   afterEach(() => {
     global.fetch = originalFetch;
+    deploymentInfoSettings.useMock = originalUseMock;
     jest.restoreAllMocks();
   });
 
@@ -45,7 +49,25 @@ describe('DeploymentInfoCard', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows the mock deployment info by default without calling fetch', async () => {
+    const fetchSpy = jest.spyOn(global, 'fetch');
+
+    renderDeploymentInfoCard(
+      createServiceEntity({ [DEPLOYMENT_ENVIRONMENT_ANNOTATION]: 'prod' }),
+    );
+
+    await expect(
+      screen.findByText(MOCK_DEPLOYMENT_INFO.hostname),
+    ).resolves.toBeInTheDocument();
+    expect(screen.getByText('Live Pod Hostname')).toBeInTheDocument();
+    expect(screen.getByText('Deployment Time')).toBeInTheDocument();
+    expect(screen.getByText(MOCK_DEPLOYMENT_INFO.time)).toBeInTheDocument();
+    expect(screen.getByText('Connected to Kubernetes')).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it('shows a progress indicator under the "Deployment Info" title while loading', async () => {
+    deploymentInfoSettings.useMock = false;
     global.fetch = jest.fn(
       () => new Promise<Response>(() => {}),
     ) as unknown as typeof fetch;
@@ -61,6 +83,7 @@ describe('DeploymentInfoCard', () => {
   });
 
   it('shows the live pod hostname, deployment time, and Kubernetes badge on success', async () => {
+    deploymentInfoSettings.useMock = false;
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -82,6 +105,7 @@ describe('DeploymentInfoCard', () => {
   });
 
   it('does not show the Kubernetes badge when not deployed on kubernetes', async () => {
+    deploymentInfoSettings.useMock = false;
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -102,6 +126,7 @@ describe('DeploymentInfoCard', () => {
   });
 
   it('shows an error warning with details when the API call fails', async () => {
+    deploymentInfoSettings.useMock = false;
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,
       status: 500,
@@ -121,6 +146,7 @@ describe('DeploymentInfoCard', () => {
   });
 
   it('shows an error warning with details when the network request fails', async () => {
+    deploymentInfoSettings.useMock = false;
     global.fetch = jest
       .fn()
       .mockRejectedValue(

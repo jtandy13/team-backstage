@@ -1,3 +1,5 @@
+import { MOCK_DEPLOYMENT_INFO } from './mockData';
+
 export interface DeploymentInfo {
   hostname: string;
   time: string;
@@ -6,6 +8,14 @@ export interface DeploymentInfo {
   env?: string;
   message?: string;
 }
+
+/**
+ * When `useMock` is true, `fetchDeploymentInfo` returns static mock data instead
+ * of calling the live service endpoint. Set to `false` to resume live fetches.
+ */
+export const deploymentInfoSettings = {
+  useMock: true,
+};
 
 export function buildDeploymentInfoUrl(
   entityName: string,
@@ -17,6 +27,10 @@ export function buildDeploymentInfoUrl(
 export async function fetchDeploymentInfo(
   url: string,
 ): Promise<DeploymentInfo> {
+  if (deploymentInfoSettings.useMock) {
+    return MOCK_DEPLOYMENT_INFO;
+  }
+
   let response: Response;
 
   try {

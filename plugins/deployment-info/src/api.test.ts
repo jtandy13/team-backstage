@@ -1,4 +1,9 @@
-import { buildDeploymentInfoUrl, fetchDeploymentInfo } from './api';
+import {
+  buildDeploymentInfoUrl,
+  deploymentInfoSettings,
+  fetchDeploymentInfo,
+} from './api';
+import { MOCK_DEPLOYMENT_INFO } from './mockData';
 
 describe('buildDeploymentInfoUrl', () => {
   it('builds a URL from the entity name and environment', () => {
@@ -15,66 +20,91 @@ describe('buildDeploymentInfoUrl', () => {
 });
 
 describe('fetchDeploymentInfo', () => {
-  const originalFetch = global.fetch;
+  const originalUseMock = deploymentInfoSettings.useMock;
 
   afterEach(() => {
-    global.fetch = originalFetch;
-    jest.restoreAllMocks();
+    deploymentInfoSettings.useMock = originalUseMock;
   });
 
-  it('resolves with the parsed JSON body on a successful response', async () => {
-    const body = {
-      hostname: 'pod-abc123',
-      time: '2026-07-07T00:00:00Z',
-      deployed_on: 'kubernetes',
-    };
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => body,
-    }) as unknown as typeof fetch;
+  describe('when useMock is true (default)', () => {
+    it('resolves with the mock deployment info without calling fetch', async () => {
+      const fetchSpy = jest.spyOn(global, 'fetch');
 
-    await expect(
-      fetchDeploymentInfo('http://my-service-prod.local/api/v1/info'),
-    ).resolves.toEqual(body);
+      await expect(
+        fetchDeploymentInfo('http://my-service-prod.local/api/v1/info'),
+      ).resolves.toEqual(MOCK_DEPLOYMENT_INFO);
+      expect(fetchSpy).not.toHaveBeenCalled();
+
+      fetchSpy.mockRestore();
+    });
   });
 
-  it('throws an error including the status code when the response is not ok', async () => {
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: false,
-      status: 503,
-      json: async () => ({}),
-    }) as unknown as typeof fetch;
+  describe('when useMock is false', () => {
+    const originalFetch = global.fetch;
 
-    await expect(
-      fetchDeploymentInfo('http://my-service-prod.local/api/v1/info'),
-    ).rejects.toThrow(
-      'Request failed with status 503 for http://my-service-prod.local/api/v1/info',
-    );
-  });
+    beforeEach(() => {
+      deploymentInfoSettings.useMock = false;
+    });
 
-  it('throws an error including the underlying message when the network request fails', async () => {
-    global.fetch = jest
-      .fn()
-      .mockRejectedValue(
-        new Error('DNS resolution failed'),
-      ) as unknown as typeof fetch;
+    afterEach(() => {
+      global.fetch = originalFetch;
+      jest.restoreAllMocks();
+    });
 
-    await expect(
-      fetchDeploymentInfo('http://my-service-prod.local/api/v1/info'),
-    ).rejects.toThrow(
-      'Could not reach http://my-service-prod.local/api/v1/info: DNS resolution failed',
-    );
-  });
+    it('resolves with the parsed JSON body on a successful response', async () => {
+      const body = {
+        hostname: 'pod-abc123',
+        time: '2026-07-07T00:00:00Z',
+        deployed_on: 'kubernetes',
+      };
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => body,
+      }) as unknown as typeof fetch;
 
-  it('wraps non-Error rejections with a generic message', async () => {
-    global.fetch = jest
-      .fn()
-      .mockRejectedValue('boom') as unknown as typeof fetch;
+      await expect(
+        fetchDeploymentInfo('http://my-service-prod.local/api/v1/info'),
+      ).resolves.toEqual(body);
+    });
 
-    await expect(
-      fetchDeploymentInfo('http://my-service-prod.local/api/v1/info'),
-    ).rejects.toThrow(
-      'Could not reach http://my-service-prod.local/api/v1/info: Network request failed',
-    );
+    it('throws an error including the status code when the response is not ok', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+      }) as unknown as typeof fetch;
+
+      await expect(
+        fetchDeploymentInfo('http://my-service-prod.local/api/v1/info'),
+      ).rejects.toThrow(
+        'Request failed with status 503 for http://my-service-prod.local/api/v1/info',
+      );
+    });
+
+    it('throws an error including the underlying message when the network request fails', async () => {
+      global.fetch = jest
+        .fn()
+        .mockRejectedValue(
+          new Error('DNS resolution failed'),
+        ) as unknown as typeof fetch;
+
+      await expect(
+        fetchDeploymentInfo('http://my-service-prod.local/api/v1/info'),
+      ).rejects.toThrow(
+        'Could not reach http://my-service-prod.local/api/v1/info: DNS resolution failed',
+      );
+    });
+
+    it('wraps non-Error rejections with a generic message', async () => {
+      global.fetch = jest
+        .fn()
+        .mockRejectedValue('boom') as unknown as typeof fetch;
+
+      await expect(
+        fetchDeploymentInfo('http://my-service-prod.local/api/v1/info'),
+      ).rejects.toThrow(
+        'Could not reach http://my-service-prod.local/api/v1/info: Network request failed',
+      );
+    });
   });
 });
