@@ -34,11 +34,11 @@ export CI=true
 export PLAYWRIGHT_URL="${PLAYWRIGHT_URL:-http://localhost:3000}"
 
 echo "Starting Backstage backend for e2e tests..."
-dotenv -e .env -- yarn workspace backend start >"${BACKEND_LOG}" 2>&1 &
+yarn dotenv -e .env -- yarn workspace backend start >"${BACKEND_LOG}" 2>&1 &
 BACKEND_PID=$!
 
 echo "Starting Backstage frontend for e2e tests..."
-dotenv -e .env -- yarn workspace app start >"${FRONTEND_LOG}" 2>&1 &
+yarn dotenv -e .env -- yarn workspace app start >"${FRONTEND_LOG}" 2>&1 &
 FRONTEND_PID=$!
 
 echo "Waiting for frontend at ${PLAYWRIGHT_URL} ..."
