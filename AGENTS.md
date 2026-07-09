@@ -34,7 +34,7 @@ yarn start   # or yarn start:app — same command
 ### Known-expected behaviors (not bugs)
 
 - The custom **Deployment Info** card on `service` entities (e.g. `example-service`) shows "Could not load deployment info". This is expected: it fetches a fictional host `http://<name>-<env>.local/api/v1/info` that does not exist in any environment.
-- **TechDocs generation** (`techdocs.generator.runIn: docker`) and `yarn build-image` require Docker and will not work in the Cloud VM. Core catalog/search/scaffolder features work without them.
+- **TechDocs generation** uses `techdocs.generator.runIn: local` (no Docker required for docs). `yarn build-image` still requires Docker and will not work in the Cloud VM.
 - The Kubernetes plugin logs a warning about missing config (no cluster configured); this is expected.
 
 ### Lint / test / build

@@ -14,7 +14,7 @@ An internal [Backstage](https://backstage.io) developer portal built as a Yarn w
 | **Backend**         | Backstage backend system (`@backstage/backend-defaults`)                                   |
 | **Database**        | PostgreSQL 16+ (native local install)                                                      |
 | **Search**          | PostgreSQL-backed search engine                                                            |
-| **Auth**            | Guest provider (development), GitHub provider                                              |
+| **Auth**            | Guest provider (development only)                                                          |
 | **Testing**         | Jest, React Testing Library, Playwright (e2e)                                              |
 | **CI/CD**           | GitHub Actions                                                                             |
 | **Git hooks**       | Husky + lint-staged                                                                        |
@@ -23,7 +23,7 @@ An internal [Backstage](https://backstage.io) developer portal built as a Yarn w
 
 - **Software Catalog** — entity discovery and ownership
 - **Scaffolder** — software templates with GitHub integration
-- **TechDocs** — documentation built locally, generated in Docker
+- **TechDocs** — documentation built and generated locally (no Docker required)
 - **Search** — catalog and TechDocs collators
 - **Kubernetes** — cluster visibility (backend plugin installed)
 - **Notifications & Signals** — real-time updates
@@ -224,11 +224,11 @@ Additional variables referenced in `app-config.yaml` (set in `.env` as needed):
 
 ## Configuration
 
-| File                         | Purpose                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------- |
-| `app-config.yaml`            | Base config — development defaults, guest auth, example catalog locations |
-| `app-config.production.yaml` | Production overrides — guest auth disabled, production auth environment   |
-| `backstage.json`             | Backstage version pin                                                     |
+| File                         | Purpose                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| `app-config.yaml`            | Base config — development defaults, guest auth, TechDocs local generator, example catalog locations |
+| `app-config.production.yaml` | Production overrides — guest auth disabled, no sign-in provider, production auth environment        |
+| `backstage.json`             | Backstage version pin                                                                               |
 
 Catalog entity locations, auth providers, TechDocs settings, and integrations are all configured in `app-config.yaml`. See the [Backstage configuration docs](https://backstage.io/docs/conf/) for reference.
 

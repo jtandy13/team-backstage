@@ -26,8 +26,10 @@ After that, go to the `packages/backend` directory and run
 yarn start
 ```
 
-If you want to override any configuration locally, for example adding any secrets,
-you can do so in `app-config.local.yaml`.
+If you want to override any configuration locally, for example adding secrets
+that should not be committed, you can create an `app-config.local.yaml` (gitignored
+via `*.local.yaml`). Shared development settings belong in `app-config.yaml` so
+they are available to everyone who clones the repo.
 
 The backend starts up on port 7007 per default.
 
@@ -40,7 +42,8 @@ entity descriptor data to consume and serve. For more information, see
 
 To get started quickly, this template already includes some statically configured example locations
 in `app-config.yaml` under `catalog.locations`. You can remove and replace these locations as you
-like, and also override them for local development in `app-config.local.yaml`.
+like. Prefer updating `app-config.yaml` for shared changes; use `app-config.local.yaml` only for
+machine-specific or secret overrides.
 
 ## Authentication
 
