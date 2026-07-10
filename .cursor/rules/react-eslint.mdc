@@ -1,0 +1,52 @@
+---
+description: Avoid Backstage frontend ESLint footguns; lint before finishing
+globs: "{packages/app,plugins}/**/*.{tsx,jsx,ts,js}"
+alwaysApply: false
+---
+
+# Frontend ESLint Footguns
+
+Follow these existing Backstage `eslint-factory` rules when editing frontend code. Do not change `.eslintrc.js` or disable rules to pass.
+
+## No default / namespace React import
+
+```tsx
+// BAD
+import React, { useState } from 'react';
+import * as React from 'react';
+
+// GOOD
+import { useState } from 'react';
+```
+
+JSX runtime does not need React in scope.
+
+## No MUI / Material-UI barrel imports
+
+```tsx
+// BAD
+import { Button } from '@mui/material';
+import { Add } from '@material-ui/icons';
+
+// GOOD
+import Button from '@mui/material/Button';
+import Add from '@material-ui/icons/Add';
+```
+
+- Do not use `@mui/*/*/*` triple paths.
+- Do not import Node builtins in frontend packages.
+
+## Backstage package / import constraints
+
+- No relative imports across monorepo packages — use the package name.
+- Declare dependencies in the package `package.json` (no undeclared imports).
+- Do not import `*.test*`, `*.stories*`, `__mocks__`, or `__testUtils__` from production source.
+- Do not use forbidden or self-package import patterns flagged by `@backstage/eslint-plugin`.
+
+## Lint before finishing
+
+After non-trivial frontend edits:
+
+1. Run `yarn workspace <package-name> lint` (or `yarn lint:all` if multiple packages changed).
+2. Fix any reported violations in the same turn.
+3. Do not change `.eslintrc.js` or disable rules to pass.
