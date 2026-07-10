@@ -5,11 +5,14 @@ set -euo pipefail
 : "${HEAD_SHA:?HEAD_SHA is required}"
 : "${CURSOR_API_KEY:?CURSOR_API_KEY is required}"
 : "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
+: "${REVIEW_FOCUS:?REVIEW_FOCUS is required}"
+: "${REVIEW_TITLE:?REVIEW_TITLE is required}"
+: "${COMMENT_MARKER:?COMMENT_MARKER is required}"
 
 REVIEW_BODY_FILE="${REVIEW_BODY_FILE:-review-body.md}"
 AGENT_OUTPUT_FILE="${AGENT_OUTPUT_FILE:-/tmp/agent-output.json}"
 PR_DIFF_FILE="${PR_DIFF_FILE:-/tmp/pr.diff}"
-AGENT_TIMEOUT="${AGENT_TIMEOUT:-12m}"
+AGENT_TIMEOUT="${AGENT_TIMEOUT:-5m}"
 
 echo "Building diff between ${BASE_SHA} and ${HEAD_SHA}..."
 git diff "${BASE_SHA}...${HEAD_SHA}" > "${PR_DIFF_FILE}"
@@ -19,7 +22,7 @@ if [ -z "${CHANGED_FILES}" ]; then
   echo "No changed files in PR diff."
 fi
 
-echo "Running Cursor agent code review..."
+echo "Running Cursor agent code review (${REVIEW_TITLE})..."
 PROMPT="$(cat <<EOF
 Review the pull request changes in this repository.
 
@@ -28,11 +31,10 @@ ${CHANGED_FILES:-"(none)"}
 
 Full diff is available at ${PR_DIFF_FILE} — read it with your file tools.
 
-Provide feedback on:
-- Code quality and readability
-- Potential bugs or issues
-- Security considerations
-- Best practices compliance
+Focus your review exclusively on: ${REVIEW_FOCUS}
+
+Do not cover other review dimensions — separate agents handle those.
+Stay strictly within this focus area.
 
 Do not modify any files. Review only.
 
@@ -86,8 +88,8 @@ HEAD_SHA_SHORT="$(echo "${HEAD_SHA}" | cut -c1-7)"
 RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
 cat > "${REVIEW_BODY_FILE}" <<EOF
-<!-- cursor-code-review -->
-## Cursor Code Review
+<!-- ${COMMENT_MARKER} -->
+## Cursor Code Review: ${REVIEW_TITLE}
 
 _Reviewed commit: \`${HEAD_SHA_SHORT}\`_ · _Workflow run: [link](${RUN_URL})_
 
