@@ -149,13 +149,13 @@ jobs:
   # -----------------------------------------------------------------
   # 2. CURSOR CODE REVIEW (pull requests to main only)
   # Runs on PR open (draft or ready) and when new commits are pushed.
-  # Posts/updates a single PR comment and fails when the agent reports
-  # critical blocking issues.
+  # Posts/updates four focused PR comments (quality, bugs, security,
+  # best practices) and fails when any agent reports critical issues.
   # -----------------------------------------------------------------
   code-review:
     name: Cursor Code Review
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     if: >
       github.event_name == 'pull_request' &&
       (github.event.action == 'opened' || github.event.action == 'synchronize') &&
@@ -178,32 +178,128 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
 
-      - name: Run Cursor code review
-        id: review
+      # --- Code quality & readability ---
+      - name: Review code quality and readability
+        id: review-quality
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_FOCUS: Code quality and readability
+          REVIEW_TITLE: Code Quality & Readability
+          COMMENT_MARKER: cursor-code-review:quality
+          REVIEW_BODY_FILE: review-quality.md
+          AGENT_OUTPUT_FILE: /tmp/agent-output-quality.json
         run: bash .github/scripts/cursor-code-review.sh
 
-      # Ensures a constantly updating "live" review comment at the top of the PR
-      - name: Find existing review comment
-        id: fc
+      - name: Find existing quality review comment
+        id: fc-quality
         uses: peter-evans/find-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: github-actions[bot]
-          body-includes: <!-- cursor-code-review -->
+          body-includes: <!-- cursor-code-review:quality -->
 
-      - name: Create or update review comment
+      - name: Create or update quality review comment
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body-path: review-body.md
+          comment-id: ${{ steps.fc-quality.outputs.comment-id }}
+          body-path: review-quality.md
+
+      # --- Potential bugs or issues ---
+      - name: Review potential bugs or issues
+        id: review-bugs
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_FOCUS: Potential bugs or issues
+          REVIEW_TITLE: Potential Bugs & Issues
+          COMMENT_MARKER: cursor-code-review:bugs
+          REVIEW_BODY_FILE: review-bugs.md
+          AGENT_OUTPUT_FILE: /tmp/agent-output-bugs.json
+        run: bash .github/scripts/cursor-code-review.sh
+
+      - name: Find existing bugs review comment
+        id: fc-bugs
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: <!-- cursor-code-review:bugs -->
+
+      - name: Create or update bugs review comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.fc-bugs.outputs.comment-id }}
+          body-path: review-bugs.md
+
+      # --- Security considerations ---
+      - name: Review security considerations
+        id: review-security
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_FOCUS: Security considerations
+          REVIEW_TITLE: Security Considerations
+          COMMENT_MARKER: cursor-code-review:security
+          REVIEW_BODY_FILE: review-security.md
+          AGENT_OUTPUT_FILE: /tmp/agent-output-security.json
+        run: bash .github/scripts/cursor-code-review.sh
+
+      - name: Find existing security review comment
+        id: fc-security
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: <!-- cursor-code-review:security -->
+
+      - name: Create or update security review comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.fc-security.outputs.comment-id }}
+          body-path: review-security.md
+
+      # --- Best practices compliance ---
+      - name: Review best practices compliance
+        id: review-best-practices
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_FOCUS: Best practices compliance
+          REVIEW_TITLE: Best Practices Compliance
+          COMMENT_MARKER: cursor-code-review:best-practices
+          REVIEW_BODY_FILE: review-best-practices.md
+          AGENT_OUTPUT_FILE: /tmp/agent-output-best-practices.json
+        run: bash .github/scripts/cursor-code-review.sh
+
+      - name: Find existing best practices review comment
+        id: fc-best-practices
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: <!-- cursor-code-review:best-practices -->
+
+      - name: Create or update best practices review comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.fc-best-practices.outputs.comment-id }}
+          body-path: review-best-practices.md
 
       - name: Enforce blocking review
-        if: steps.review.outputs.critical_issues_found == 'true'
+        if: >
+          steps.review-quality.outputs.critical_issues_found == 'true' ||
+          steps.review-bugs.outputs.critical_issues_found == 'true' ||
+          steps.review-security.outputs.critical_issues_found == 'true' ||
+          steps.review-best-practices.outputs.critical_issues_found == 'true'
         run: |
           echo "Critical issues were found during code review. Blocking merge."
           exit 1
