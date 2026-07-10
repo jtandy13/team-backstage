@@ -13,7 +13,7 @@ import { DEPLOYMENT_ENVIRONMENT_ANNOTATION } from '../constants';
 
 //export const DeploymentInfoCard = () => {
  // const { entity } = useEntity();
-  const environment =
+  //const environment =
     entity.metadata.annotations?.[DEPLOYMENT_ENVIRONMENT_ANNOTATION];
 
   const deploymentInfoUrl = useMemo(() => {
