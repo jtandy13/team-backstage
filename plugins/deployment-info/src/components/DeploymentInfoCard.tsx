@@ -11,8 +11,8 @@ import { useEntity } from '@backstage/plugin-catalog-react';
 import { buildDeploymentInfoUrl, fetchDeploymentInfo } from '../api';
 import { DEPLOYMENT_ENVIRONMENT_ANNOTATION } from '../constants';
 
-export const DeploymentInfoCard = () => {
-  const { entity } = useEntity();
+//export const DeploymentInfoCard = () => {
+ // const { entity } = useEntity();
   const environment =
     entity.metadata.annotations?.[DEPLOYMENT_ENVIRONMENT_ANNOTATION];
 
