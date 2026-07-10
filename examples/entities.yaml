@@ -26,6 +26,7 @@ metadata:
   name: example-service
   annotations:
     deployment.backstage.io/environment: dev
+    testing.backstage.io/status: ok
 spec:
   type: service
   lifecycle: production
@@ -37,6 +38,7 @@ apiVersion: backstage.io/v1alpha1
 kind: API
 metadata:
   name: example-grpc-api
+
 spec:
   type: grpc
   lifecycle: experimental

@@ -10,6 +10,8 @@ app:
     - page:catalog:
         config:
           path: /
+    - entity-card:deployment-info/deployment-info
+    - entity-card:testing-component/testing-component
 
 organization:
   name: My Company
