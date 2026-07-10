@@ -69,8 +69,11 @@ export const DeploymentInfoCard = () => {
           <Grid item>
             <Chip
               label="Connected to Kubernetes"
-              color="primary"
               size="small"
+              style={{
+                backgroundColor: '#ff9800',
+                color: '#fff',
+              }}
             />
           </Grid>
         </Grid>
