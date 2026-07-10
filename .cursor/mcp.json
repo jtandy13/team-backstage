@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "stitch": {
+      "command": "node",
+      "args": ["~/.cursor/stitch-mcp-proxy.mjs"],
+      "envFile": ".env"
+    }
+  }
+}
