@@ -8,7 +8,7 @@ import {
   WarningPanel,
 } from '@backstage/core-components';
 import { useEntity } from '@backstage/plugin-catalog-react';
-/*import { buildDeploymentInfoUrl, fetchDeploymentInfo } from '../api';
+import { buildDeploymentInfoUrl, fetchDeploymentInfo } from '../api';
 import { DEPLOYMENT_ENVIRONMENT_ANNOTATION } from '../constants';
 
 export const DeploymentInfoCard = () => {
@@ -17,7 +17,7 @@ export const DeploymentInfoCard = () => {
     entity.metadata.annotations?.[DEPLOYMENT_ENVIRONMENT_ANNOTATION];
 
   const deploymentInfoUrl = useMemo(() => {
-    if (!environment) {*/
+    if (!environment) {
       return undefined;
     }
 
