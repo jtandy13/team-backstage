@@ -8,10 +8,10 @@
 
 ### Parameters / Inputs
 
-| Name                                                  | Type                              | Required | Description                                                                                                                                                                                                                                                                     |
-| ----------------------------------------------------- | --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `entity` (via `useEntity()` context)                  | `Entity`                          | Y        | The catalog entity being viewed; must be a `Component` with `spec.type === 'service'` for the card to render (enforced by the extension filter).                                                                                                                                |
-| `metadata.annotations['testing.backstage.io/status']` | `string` (`'ok'` \| `'degraded'`) | N        | Annotation read from the entity. Determines the status label shown on the card (`ok` → `OK`, `degraded` → `Degraded`). If absent, the annotation value defaults to `'unknown'` internally, which does not match any known status — see Side Effects for the resulting behavior. |
+| Name                                                  | Type                              | Required | Description                                                                                                                                                              |
+| ----------------------------------------------------- | --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `entity` (via `useEntity()` context)                  | `Entity`                          | Y        | The catalog entity being viewed; must be a `Component` with `spec.type === 'service'` for the card to render (enforced by the extension filter).                         |
+| `metadata.annotations['testing.backstage.io/status']` | `string` (`'ok'` \| `'degraded'`) | N        | Annotation read from the entity. Determines the status label shown on the card (`ok` → `OK`, `degraded` → `Degraded`). Defaults to `'ok'` when the annotation is absent. |
 
 ### Return / Output
 
@@ -22,7 +22,6 @@
 ### Side Effects
 
 - Reads the current entity from catalog context via `useEntity()` (`@backstage/plugin-catalog-react`); performs no writes.
-- **Known limitation:** if the entity's `testing.backstage.io/status` annotation is missing or set to a value other than `ok`/`degraded`, the status lookup (`Array.prototype.find`) returns `undefined` and the component throws when reading `.label`, causing the card to crash at render time. Ensure the annotation is set to a supported value before attaching this card to an entity.
 
 ## Usage Example
 
