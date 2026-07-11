@@ -80,7 +80,10 @@ function RunsTable({ runs }: { runs: GithubActionsRun[] }) {
         </TableHead>
         <TableBody>
           {runs.map(run => (
-            <TableRow key={`${run.workflow}-${run.branch}-${run.timeAgo}`} hover>
+            <TableRow
+              key={`${run.workflow}-${run.branch}-${run.timeAgo}`}
+              hover
+            >
               <TableCell>
                 <Typography className={classes.workflow} variant="body2">
                   {run.workflow}
